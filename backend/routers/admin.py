@@ -9,6 +9,30 @@ from services.persona import generate_persona
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
+# ── Delete employee (cascades through sessions/messages/evals) ────
+@router.delete("/user/{user_id}")
+def delete_user(
+    user_id: int,
+    _: models.User = Depends(auth.require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role == "admin":
+        raise HTTPException(status_code=400, detail="Cannot delete an admin account.")
+
+    session_ids = [s.id for s in db.query(models.Session).filter(models.Session.user_id == user_id).all()]
+    if session_ids:
+        db.query(models.Evaluation).filter(models.Evaluation.session_id.in_(session_ids)).delete(synchronize_session=False)
+        db.query(models.Message).filter(models.Message.session_id.in_(session_ids)).delete(synchronize_session=False)
+        db.query(models.Session).filter(models.Session.user_id == user_id).delete(synchronize_session=False)
+    db.query(models.PasswordReset).filter(models.PasswordReset.user_id == user_id).delete(synchronize_session=False)
+    db.delete(user)
+    db.commit()
+    return {"status": "ok", "deleted_user_id": user_id}
+
+
 # ── Create employee ───────────────────────────────────
 @router.post("/users", response_model=schemas.CreateEmployeeResponse)
 def create_employee(

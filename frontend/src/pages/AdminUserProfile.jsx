@@ -1,19 +1,27 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import api from "../api";
 import Header from "../components/Header";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function AdminUserProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     api.get(`/admin/user/${id}`)
       .then(({ data }) => setProfile(data))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleDelete = async () => {
+    await api.delete(`/admin/user/${id}`);
+    navigate("/admin");
+  };
 
   if (loading) {
     return (
@@ -49,26 +57,41 @@ export default function AdminUserProfile() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 animate-fade-in">
         {/* Profile header */}
-        <div className="flex items-start gap-4 mb-8">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center text-xl font-semibold flex-shrink-0">
-            {profile.name?.[0]?.toUpperCase()}
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold">{profile.name}</h1>
-            <div className="text-sm text-zinc-500 dark:text-zinc-400">{profile.email}</div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">
-              <span className="text-zinc-600 dark:text-zinc-400">
-                <strong className="text-zinc-900 dark:text-zinc-100 text-sm">{profile.total_sessions}</strong> sessions
-              </span>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                Avg <strong className="text-zinc-900 dark:text-zinc-100 text-sm">{pct(profile.avg_score)}</strong>
-              </span>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                <span className="text-base align-middle">🔥</span>{" "}
-                <strong className="text-zinc-900 dark:text-zinc-100 text-sm">{profile.streak ?? 0}</strong> day streak
-              </span>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div className="flex items-start gap-4 min-w-0">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center text-xl font-semibold flex-shrink-0">
+              {profile.name?.[0]?.toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold truncate">{profile.name}</h1>
+              <div className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{profile.email}</div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">
+                <span className="text-zinc-600 dark:text-zinc-400">
+                  <strong className="text-zinc-900 dark:text-zinc-100 text-sm">{profile.total_sessions}</strong> sessions
+                </span>
+                <span className="text-zinc-600 dark:text-zinc-400">
+                  Avg <strong className="text-zinc-900 dark:text-zinc-100 text-sm">{pct(profile.avg_score)}</strong>
+                </span>
+                <span className="text-zinc-600 dark:text-zinc-400">
+                  <span className="text-base align-middle">🔥</span>{" "}
+                  <strong className="text-zinc-900 dark:text-zinc-100 text-sm">{profile.streak ?? 0}</strong> day streak
+                </span>
+              </div>
             </div>
           </div>
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="px-3 py-2 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs font-medium transition flex-shrink-0 flex items-center gap-1.5"
+            title="Delete this employee"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+              <path d="M10 11v6M14 11v6"></path>
+              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span className="hidden sm:inline">Delete user</span>
+          </button>
         </div>
 
         {/* Persona summary */}
@@ -116,6 +139,24 @@ export default function AdminUserProfile() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        title="Delete this employee?"
+        body={
+          <>
+            <p>
+              <strong className="text-zinc-900 dark:text-zinc-100">{profile.name}</strong> ({profile.email})
+              and <strong>all their conversation history</strong> will be permanently deleted. This cannot be undone.
+            </p>
+          </>
+        }
+        confirmText="Delete employee"
+        destructive
+        requireText="DELETE"
+      />
     </div>
   );
 }
@@ -307,69 +348,91 @@ function Transcript({ messages, senderName }) {
     );
   }
 
+  const initial = senderName?.[0]?.toUpperCase() || "?";
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-4 text-[10px] uppercase tracking-wider font-semibold pb-2 border-b border-dashed border-zinc-200 dark:border-zinc-800">
+        <span className="flex items-center gap-1.5 text-pink-600 dark:text-pink-400">
+          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-pink-500 to-orange-500"></span>
+          {senderName} <span className="text-zinc-400 dark:text-zinc-500 normal-case">(simulated candidate)</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+          <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+          HR Trainee
+        </span>
+      </div>
+
       {rounds.map((r, idx) => (
         <div key={idx}>
-          <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-            Round {idx + 1}
-          </div>
-
-          {/* User reply */}
-          <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/40 rounded-xl p-4 mb-2">
-            <div className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider mb-2">
-              HR Trainee
+          {/* Round divider */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 px-2">
+              Round {idx + 1}
             </div>
-            <p className="text-[13px] text-zinc-800 dark:text-zinc-200 leading-relaxed mb-3">
-              {r.user.content}
-            </p>
-
-            {/* Inline evaluation */}
-            {r.user.evaluation && (
-              <div className="pt-3 border-t border-indigo-200 dark:border-indigo-900/40">
-                <div className="flex items-center gap-3 mb-2.5">
-                  <ScorePill value={r.user.evaluation.overall} size="md" />
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold">
-                    {r.user.evaluation.decision}
-                  </span>
-                </div>
-
-                {/* Mini score bars */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                  <MiniScore label="Ack" value={r.user.evaluation.acknowledge} />
-                  <MiniScore label="Apo" value={r.user.evaluation.apology} />
-                  <MiniScore label="Clr" value={r.user.evaluation.clarity} />
-                  <MiniScore label="Re." value={r.user.evaluation.reassurance} />
-                </div>
-
-                {/* Hits / misses */}
-                {(r.user.evaluation.points_hit?.length > 0 || r.user.evaluation.points_missed?.length > 0) && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {r.user.evaluation.points_hit.map((p) => (
-                      <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-medium border border-emerald-200 dark:border-emerald-900/50">
-                        ✓ {pretty(p)}
-                      </span>
-                    ))}
-                    {r.user.evaluation.points_missed.map((p) => (
-                      <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-medium border border-red-200 dark:border-red-900/50">
-                        ✗ {pretty(p)}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
           </div>
 
-          {/* AI reply */}
-          {r.ai && (
-            <div className="bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
-              <div className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                {senderName} (simulated)
+          {/* HR Trainee — RIGHT side */}
+          <div className="flex justify-end mb-3">
+            <div className="max-w-[80%]">
+              <div className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider mb-1.5 text-right pr-2">
+                HR Trainee said
               </div>
-              <p className="text-[13px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                {r.ai.content}
-              </p>
+              <div className="bg-indigo-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed shadow-sm">
+                {r.user.content}
+              </div>
+
+              {/* Evaluation panel below the HR bubble */}
+              {r.user.evaluation && (
+                <div className="mt-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <ScorePill value={r.user.evaluation.overall} size="sm" />
+                    <span className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-semibold">
+                      AI verdict: {r.user.evaluation.decision}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2.5">
+                    <MiniScore label="Ack" value={r.user.evaluation.acknowledge} />
+                    <MiniScore label="Apo" value={r.user.evaluation.apology} />
+                    <MiniScore label="Clr" value={r.user.evaluation.clarity} />
+                    <MiniScore label="Re." value={r.user.evaluation.reassurance} />
+                  </div>
+                  {(r.user.evaluation.points_hit?.length > 0 || r.user.evaluation.points_missed?.length > 0) && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {r.user.evaluation.points_hit.map((p) => (
+                        <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-medium border border-emerald-200 dark:border-emerald-900/50">
+                          ✓ {pretty(p)}
+                        </span>
+                      ))}
+                      {r.user.evaluation.points_missed.map((p) => (
+                        <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-medium border border-red-200 dark:border-red-900/50">
+                          ✗ {pretty(p)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Candidate — LEFT side, with avatar */}
+          {r.ai && (
+            <div className="flex justify-start gap-2 items-end mb-1">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {initial}
+              </div>
+              <div className="max-w-[78%]">
+                <div className="text-[10px] font-semibold text-pink-700 dark:text-pink-400 uppercase tracking-wider mb-1 ml-2">
+                  {senderName} replied
+                </div>
+                <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm leading-relaxed shadow-sm text-zinc-900 dark:text-zinc-100">
+                  {r.ai.content}
+                </div>
+              </div>
             </div>
           )}
         </div>

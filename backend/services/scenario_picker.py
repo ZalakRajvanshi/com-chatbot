@@ -1,7 +1,36 @@
+import re
 from datetime import date
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models
+
+
+# Greeting variants the candidate might originally use
+_GREETING_PATTERNS = [
+    r"^Hi(\s+there)?[, ]+TPF[\w'\s]*?[,!]\s*",
+    r"^Hello(\s+there)?[, ]+TPF[\w'\s]*?[,!]\s*",
+    r"^Hey(\s+there)?[, ]+TPF[\w'\s]*?[,!]\s*",
+    r"^Hi(\s+there)?[, ]+team[,!]\s*",
+    r"^Hello(\s+there)?[, ]+team[,!]\s*",
+    r"^Hey(\s+there)?[, ]+team[,!]\s*",
+]
+
+
+def personalize_message(message: str, trainee_first_name: str) -> str:
+    """
+    Replace generic 'Hi TPF team' / 'Hello TPF' greetings with 'Hi {name}'.
+    If the message has no recognisable greeting, prepend one.
+    """
+    if not trainee_first_name:
+        return message
+
+    text = message.strip()
+    for pattern in _GREETING_PATTERNS:
+        if re.match(pattern, text, re.IGNORECASE):
+            return re.sub(pattern, f"Hi {trainee_first_name}, ", text, count=1, flags=re.IGNORECASE)
+
+    # No greeting found — prepend one. Lowercase first letter of original if needed.
+    return f"Hi {trainee_first_name},\n\n{text}"
 
 
 def get_or_create_today_session(user: models.User, db: Session) -> models.Session:

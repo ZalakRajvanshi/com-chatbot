@@ -111,10 +111,10 @@ export default function AdminUserProfile() {
             Score Breakdown
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-            <ScoreBar label="Acknowledge" value={profile.avg_acknowledge} />
-            <ScoreBar label="Apology" value={profile.avg_apology} />
-            <ScoreBar label="Clarity" value={profile.avg_clarity} />
-            <ScoreBar label="Reassurance" value={profile.avg_reassurance} />
+            <ScoreBar label="Heard" value={profile.avg_acknowledge} />
+            <ScoreBar label="Clear" value={profile.avg_clarity} />
+            <ScoreBar label="Action" value={profile.avg_apology} />
+            <ScoreBar label="Tone" value={profile.avg_reassurance} />
           </div>
         </div>
 
@@ -395,10 +395,10 @@ function Transcript({ messages, senderName }) {
                     </span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2.5">
-                    <MiniScore label="Ack" value={r.user.evaluation.acknowledge} />
-                    <MiniScore label="Apo" value={r.user.evaluation.apology} />
-                    <MiniScore label="Clr" value={r.user.evaluation.clarity} />
-                    <MiniScore label="Re." value={r.user.evaluation.reassurance} />
+                    <MiniScore label="Heard" value={r.user.evaluation.acknowledge} />
+                    <MiniScore label="Clear" value={r.user.evaluation.clarity} />
+                    <MiniScore label="Action" value={r.user.evaluation.apology} />
+                    <MiniScore label="Tone" value={r.user.evaluation.reassurance} />
                   </div>
                   {(r.user.evaluation.points_hit?.length > 0 || r.user.evaluation.points_missed?.length > 0) && (
                     <div className="flex flex-wrap gap-1.5">

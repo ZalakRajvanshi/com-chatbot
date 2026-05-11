@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql import func
 from datetime import datetime
 import models, schemas, auth
 from database import get_db
-from services.scenario_picker import get_or_create_today_session
+from services.scenario_picker import get_or_create_today_session, personalize_message
 from services.ai_evaluator import evaluate, generate_daily_summary
+from services.scenario_generator import generate_one_in_background
 
 router = APIRouter(prefix="/session", tags=["session"])
 
@@ -26,11 +27,22 @@ def load_session(session_id: int, db: Session) -> models.Session:
 
 @router.get("/today", response_model=schemas.SessionOut)
 def get_today_session(
+    background_tasks: BackgroundTasks,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     session = get_or_create_today_session(current_user, db)
-    return load_session(session.id, db)
+    loaded = load_session(session.id, db)
+
+    # Personalize the opening greeting so the candidate addresses this trainee by name
+    trainee_first = (current_user.name or "").split(" ")[0]
+    if loaded and loaded.scenario:
+        loaded.scenario.message = personalize_message(loaded.scenario.message, trainee_first)
+
+    # Background: top up the scenario pool if it's running low
+    background_tasks.add_task(generate_one_in_background)
+
+    return loaded
 
 
 @router.post("/message", response_model=schemas.SendMessageResponse)
@@ -73,11 +85,12 @@ def send_message(
     history = [{"role": m.role, "content": m.content} for m in all_messages]
     round_num = user_messages_count + 1
 
-    # Evaluate with AI
+    # Evaluate with AI — pass the personalized scenario so the AI sees what the user saw
     scenario = session.scenario
     trainee_first_name = (current_user.name or "").split(" ")[0]
+    personalized_msg = personalize_message(scenario.message, trainee_first_name)
     result = evaluate(
-        scenario_message=scenario.message,
+        scenario_message=personalized_msg,
         expected_points=scenario.expected_points or [],
         ideal_response_tone=scenario.ideal_response_tone or "",
         conversation_history=history,

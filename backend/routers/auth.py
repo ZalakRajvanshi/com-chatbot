@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas, auth
+from services.email import send_email, password_reset_email, is_configured as email_configured
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -103,13 +104,25 @@ def forgot_password(request: schemas.ForgotPasswordRequest, db: Session = Depend
         db.commit()
 
         link = f"{RESET_LINK_BASE}/{token}"
-        # In production: send via SMTP/SendGrid here.
-        # For dev, print so the admin can copy-paste it to the user.
-        print("\n" + "=" * 70)
-        print(f"PASSWORD RESET REQUESTED for: {user.email}")
-        print(f"Send this link to the user (expires in {RESET_TOKEN_TTL_HOURS}h):")
-        print(f"  {link}")
-        print("=" * 70 + "\n")
+
+        # Try to send email via SMTP. Falls back to console log if not configured.
+        sent_via_email = False
+        if email_configured():
+            try:
+                subject, html = password_reset_email(user.name, link)
+                sent_via_email = send_email(user.email, subject, html)
+            except Exception as e:
+                print(f"[email] Failed to send reset email to {user.email}: {e}")
+                sent_via_email = False
+
+        if not sent_via_email:
+            # Dev / fallback mode: print to logs so admin can hand the link over
+            print("\n" + "=" * 70)
+            print(f"PASSWORD RESET REQUESTED for: {user.email}")
+            print(f"(SMTP not configured or failed — copy-paste this link manually)")
+            print(f"Expires in {RESET_TOKEN_TTL_HOURS}h:")
+            print(f"  {link}")
+            print("=" * 70 + "\n")
 
     return {"status": "ok", "message": "If that email exists, a reset link has been sent."}
 

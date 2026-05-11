@@ -55,7 +55,7 @@ export default function AddEmployeeModal({ open, onClose, onCreated }) {
               required
               autoFocus
               className="w-full px-3.5 py-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              placeholder="Astha"
+              placeholder="Full name"
             />
           </div>
           <div>
@@ -66,7 +66,7 @@ export default function AddEmployeeModal({ open, onClose, onCreated }) {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-3.5 py-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-              placeholder="astha@theproductfolks.com"
+              placeholder="name@theproductfolks.com"
             />
           </div>
           <div>

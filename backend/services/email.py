@@ -7,7 +7,7 @@ Configured via env vars:
   SMTP_USER       - smtp username
   SMTP_PASSWORD   - smtp password / app password
   SMTP_FROM       - "From" address (e.g. noreply@theproductfolks.com)
-  SMTP_FROM_NAME  - friendly name (e.g. "The Product Folks")
+  SMTP_FROM_NAME  - friendly name (e.g. "Arova")
 
 If any of HOST/USER/PASSWORD are missing, send_email() returns False
 without raising. Caller can detect this and fall back to console logging.
@@ -23,7 +23,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "").strip()
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
 SMTP_FROM = os.getenv("SMTP_FROM", "").strip() or SMTP_USER
-SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "The Product Folks").strip()
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Arova").strip()
 
 
 def is_configured() -> bool:
@@ -87,7 +87,7 @@ def password_reset_email(name: str, reset_link: str) -> tuple[str, str]:
 <tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;border:1px solid #e4e4e7;overflow:hidden;">
     <tr><td style="padding:24px 28px 8px 28px;">
-      <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#6366f1;text-transform:uppercase;margin-bottom:6px;">The Product Folks</div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#6366f1;text-transform:uppercase;margin-bottom:6px;">Arova</div>
       <h1 style="margin:0;font-size:22px;font-weight:600;color:#18181b;">Reset your password</h1>
     </td></tr>
     <tr><td style="padding:8px 28px 8px 28px;">
@@ -113,7 +113,7 @@ def password_reset_email(name: str, reset_link: str) -> tuple[str, str]:
       </p>
     </td></tr>
   </table>
-  <div style="font-size:11px;color:#a1a1aa;margin-top:14px;">© The Product Folks · Communication Practice</div>
+  <div style="font-size:11px;color:#a1a1aa;margin-top:14px;">© Arova · Communication Practice</div>
 </td></tr>
 </table>
 </body></html>"""

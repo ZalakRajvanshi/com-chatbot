@@ -30,7 +30,7 @@ export default function ForgotPassword() {
         <div className="mb-8 flex items-center gap-3">
           <Logo size={36} />
           <div>
-            <div className="text-sm font-semibold">The Product Folks</div>
+            <div className="text-sm font-semibold">Arova</div>
             <div className="text-xs text-zinc-500 dark:text-zinc-400">Communication Practice</div>
           </div>
         </div>

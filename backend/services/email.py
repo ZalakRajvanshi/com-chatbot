@@ -113,7 +113,7 @@ def password_reset_email(name: str, reset_link: str) -> tuple[str, str]:
       </p>
     </td></tr>
   </table>
-  <div style="font-size:11px;color:#a1a1aa;margin-top:14px;">© Arova</div>
+  <div style="font-size:11px;color:#a1a1aa;margin-top:14px;">© Arova · by The Product Folks</div>
 </td></tr>
 </table>
 </body></html>"""

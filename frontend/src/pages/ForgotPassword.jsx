@@ -29,7 +29,10 @@ export default function ForgotPassword() {
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 flex items-center gap-3">
           <Logo size={36} />
-          <div className="text-sm font-semibold">Arova</div>
+          <div>
+            <div className="text-sm font-semibold">Arova</div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">by The Product Folks</div>
+          </div>
         </div>
 
         {!submitted ? (
